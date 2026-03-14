@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Completed Queue</title>
+
+    <style>
+      
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        :root {
+            --primary: #1e293b;
+            --accent: #0ea5e9;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --danger: #ef4444;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+        }
+
+       
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--primary);
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            color: var(--accent);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #334155;
+            color: white;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: 260px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .main-content h2 {
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+
+        /* ===== TABLE CARD ===== */
+        .container {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+
+        /* ===== BADGES ===== */
+        .badge-waiting {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* ===== BUTTONS ===== */
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-complete {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: var(--danger);
+            color: white;
+            margin-left: 6px;
+        }
+
+        .btn-complete:hover { opacity: 0.9; }
+        .btn-cancel:hover { opacity: 0.9; }
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>🏥 HealthCare</h2>
+    <a href="index.html">Overview</a>
+    <a href="booking.html">Book Appointment</a>
+    <a href="waiting.html">Waiting Queue</a>
+    <a href="completed.html" class="active">Completed Queue</a>
+</div>
+
+<div class="main-content">
+    <h2>🟢 Completed Appointments</h2>
+
+    <table class="container">
+        <thead>
+            <tr>
+                <th>Token</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="doneTable"></tbody>
+    </table>
+</div>
+
+<script>
+function loadCompleted() {
+    const apps = JSON.parse(localStorage.getItem('apps') || '[]');
+    const doneBody = document.getElementById('doneTable');
+    doneBody.innerHTML = '';
+
+    apps.forEach(app => {
+        if (app.status === "Completed") {
+            doneBody.innerHTML += `
+            <tr>
+                <td><b>${app.token}</b></td>
+                <td>${app.name}</td>
+                <td>${app.specialist}</td>
+                <td><span class="badge-done">Completed</span></td>
+            </tr>`;
+        }
+    });
+}
+
+loadCompleted();
+</script>
+
+</body>
+</html>

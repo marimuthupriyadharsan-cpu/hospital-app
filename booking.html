@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Book Appointment</title>
+
+<style>
+:root {
+  --primary:#1e293b;
+  --accent:#0ea5e9;
+  --bg:#f8fafc;
+}
+
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
+
+body {
+  background:var(--bg);
+  display:flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width:260px;
+  height:100vh;
+  background:var(--primary);
+  color:white;
+  padding:20px;
+}
+
+.sidebar h2 {
+  color:var(--accent);
+  text-align:center;
+  margin-bottom:30px;
+}
+
+.sidebar a {
+  display:block;
+  color:#94a3b8;
+  text-decoration:none;
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+
+.sidebar a.active,
+.sidebar a:hover {
+  background:#334155;
+  color:white;
+}
+
+/* Main */
+.main-content {
+  margin-left:260px;
+  width:100%;
+  padding:40px;
+  display:flex;
+  justify-content:center;
+}
+
+.container {
+  width:100%;
+  max-width:520px;
+  background:white;
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+h2 {
+  text-align:center;
+  color:var(--accent);
+  margin-bottom:20px;
+}
+
+input, select, textarea {
+  width:100%;
+  padding:12px;
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  margin-bottom:14px;
+}
+
+button {
+  background:var(--accent);
+  color:white;
+  padding:14px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#0284c7;
+}
+
+/* Reminder Button */
+#sendReminder {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>🏥 HealthCare</h2>
+  <a href="index.html">Overview</a>
+  <a href="booking.html" class="active">Book Appointment</a>
+  <a href="waiting.html">Waiting Queue</a>
+  <a href="completed.html">Completed</a>
+</div>
+
+<div class="main-content">
+<div class="container">
+
+<h2>New Appointment</h2>
+
+<form id="appForm">
+  <input id="pName" placeholder="Patient Name" required>
+  <input id="pPhone" placeholder="WhatsApp Number (10 digits)" pattern="\d{10}" required>
+
+  <select id="specialist" required>
+    <option value="">Select Specialist</option>
+    <option>Dr. Arun (Cardiology)</option>
+    <option>Dr. Priya (Dental)</option>
+    <option>Dr. Vijay (Ortho)</option>
+  </select>
+
+  <input type="date" id="pDate" required>
+  <input type="time" id="pTime" required>
+  <input type="number" id="pAge" placeholder="Age" required>
+
+  <select id="pGender" required>
+    <option value="">Gender</option>
+    <option>Male</option>
+    <option>Female</option>
+    <option>Other</option>
+  </select>
+
+  <textarea id="pAddress" placeholder="Address" rows="3" required></textarea>
+  <button type="submit">Confirm Booking</button>
+</form>
+
+<div id="tokenBox" style="display:none;text-align:center;margin-top:15px;">
+  <h3>Your Token</h3>
+  <div id="tokenText" style="font-size:22px;font-weight:bold;"></div>
+</div>
+
+</div>
+</div>
+
+<!-- WhatsApp Reminder Button -->
+<button id="sendReminder">Send WhatsApp Reminder</button>
+
+<script>
+let apps = JSON.parse(localStorage.getItem("apps") || "[]");
+
+/* Booking Logic */
+document.getElementById("appForm").onsubmit = e => {
+  e.preventDefault();
+
+  const doctor = specialist.value;
+  const count = apps.filter(a => a.specialist === doctor).length + 1;
+  const token = doctor.split(" ")[1] + "-" + count;
+
+  const app = {
+    id: Date.now(),
+    token,
+    name: pName.value,
+    phone: pPhone.value,
+    specialist: doctor,
+    date: pDate.value,
+    time: pTime.value,
+    age: pAge.value,
+    gender: pGender.value,
+    address: pAddress.value,
+    status:"Waiting",
+    notified:false
+  };
+
+  apps.push(app);
+  localStorage.setItem("apps", JSON.stringify(apps));
+
+  tokenText.innerText = token;
+  tokenBox.style.display = "block";
+
+  setTimeout(()=>location.href="waiting.html",1500);
+};
+
+/* WhatsApp Reminder Logic (Laptop Chrome SAFE) */
+const btn = document.getElementById("sendReminder");
+
+setInterval(() => {
+  let apps = JSON.parse(localStorage.getItem("apps") || "[]");
+  const now = new Date();
+
+  apps.forEach(app => {
+    if (app.status === "Waiting" && !app.notified) {
+      const t = new Date(`${app.date}T${app.time}`);
+      const diff = Math.floor((t - now) / 60000);
+
+      if (diff <= 20 && diff > 19) {
+        btn.style.display = "block";
+
+        btn.onclick = () => {
+          const waURL =
+            `https://wa.me/91${app.phone}?text=${encodeURIComponent(
+              `Hello ${app.name}, your appointment with ${app.specialist} is at ${app.time}. Please be ready.`
+            )}`;
+
+          window.open(waURL, "_blank");
+
+          app.notified = true;
+          localStorage.setItem("apps", JSON.stringify(apps));
+          btn.style.display = "none";
+        };
+      }
+    }
+  });
+}, 60000);
+</script>
+
+</body>
+</html>
+

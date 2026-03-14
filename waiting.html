@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Waiting Queue</title>
+
+    <style>
+      
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        :root {
+            --primary: #1e293b;
+            --accent: #0ea5e9;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --danger: #ef4444;
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+        }
+
+       
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background: var(--primary);
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            color: var(--accent);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: #334155;
+            color: white;
+        }
+
+        
+        .main-content {
+            margin-left: 260px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .main-content h2 {
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+
+        
+        .container {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+
+        
+        .badge-waiting {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-complete {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: var(--danger);
+            color: white;
+            margin-left: 6px;
+        }
+
+        .btn-complete:hover { opacity: 0.9; }
+        .btn-cancel:hover { opacity: 0.9; }
+
+    </style>
+</head>
+
+<body>
+
+
+<div class="sidebar">
+    <h2>🏥 HealthCare</h2>
+    <a href="index.html">Overview</a>
+    <a href="booking.html">Book Appointment</a>
+    <a href="waiting.html" class="active">Waiting Queue</a>
+    <a href="completed.html">Completed Queue</a>
+</div>
+
+
+<div class="main-content">
+    <h2>🔴 Waiting Queue</h2>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="waitTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function loadWaiting() {
+    const apps = JSON.parse(localStorage.getItem('apps') || '[]');
+    const waitBody = document.getElementById('waitTable');
+    waitBody.innerHTML = '';
+
+    apps.forEach(app => {
+        if (app.status === "Waiting") {
+            waitBody.innerHTML += `
+            <tr>
+                <td><b>${app.token}</b></td>
+                <td>
+                    <b>${app.name}</b><br>
+                    <small>${app.phone}</small>
+                </td>
+                <td>${app.specialist}</td>
+                <td>${app.time}</td>
+                <td><span class="badge-waiting">Waiting</span></td>
+                <td>
+                    <button class="btn-complete" onclick="markDone(${app.id})">Done</button>
+                    <button class="btn-cancel" onclick="cancelAppointment(${app.id})">Cancel</button>
+                </td>
+            </tr>`;
+        }
+    });
+}
+
+function markDone(id) {
+    let apps = JSON.parse(localStorage.getItem('apps'));
+    const idx = apps.findIndex(a => a.id === id);
+    apps[idx].status = "Completed";
+    localStorage.setItem('apps', JSON.stringify(apps));
+    window.location.href = "completed.html";
+}
+
+function cancelAppointment(id) {
+    if (!confirm("Cancel this appointment?")) return;
+    let apps = JSON.parse(localStorage.getItem('apps'));
+    apps = apps.filter(a => a.id !== id);
+    localStorage.setItem('apps', JSON.stringify(apps));
+    loadWaiting();
+}
+
+setInterval(() => {
+    let apps = JSON.parse(localStorage.getItem('apps') || '[]');
+    let changed = false;
+    const now = new Date();
+
+   apps.forEach(app => {
+    if (app.status === "Waiting" && app.notified !== true) {
+
+        // current time
+        const now = new Date();
+
+        // appointment time
+        const appTime = new Date(`${app.date}T${app.time}`);
+
+        // difference in minutes
+        const diffMinutes = Math.round((appTime.getTime() - now.getTime()) / (1000 * 60));
+
+        // send message exactly 20 minutes before (or 19–20 buffer)
+        if (diffMinutes === 20 || diffMinutes === 19) {
+            const msg = `Hi ${app.name}, your appointment with ${app.specialist} is in 20 minutes.`;
+
+            window.open(
+                `https://wa.me/${app.phone}?text=${encodeURIComponent(msg)}`,
+                "_blank"
+            );
+
+            // mark as notified
+            app.notified = true;
+            changed = true;
+        }
+    }
+});
+apps.forEach(app => {
+    if (app.status === "Waiting" && app.notified !== true) {
+
+        // current time
+        const now = new Date();
+
+        // appointment time
+        const appTime = new Date(`${app.date}T${app.time}`);
+
+        // difference in minutes
+        const diffMinutes = Math.round((appTime.getTime() - now.getTime()) / (1000 * 60));
+
+        // send message exactly 20 minutes before (or 19–20 buffer)
+        if (diffMinutes === 20 || diffMinutes === 19) {
+            const msg = `Hi ${app.name}, your appointment with ${app.specialist} is in 20 minutes.`;
+
+            window.open(
+                `https://wa.me/${app.phone}?text=${encodeURIComponent(msg)}`,
+                "_blank"
+            );
+
+            // mark as notified
+            app.notified = true;
+            changed = true;
+        }
+    }
+});
+
+
+    if (changed) {
+        localStorage.setItem('apps', JSON.stringify(apps));
+    }
+}, 5000);
+
+loadWaiting();
+</script>
+
+</body>
+</html>
